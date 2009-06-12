@@ -17,6 +17,12 @@ module FakeWeb
         code, msg = meta_information
         response = Net::HTTPResponse.send(:response_class, code.to_s).new("1.0", code.to_s, msg)
         response.instance_variable_set(:@body, content)
+        
+        # Allows for setting arbitrary headers via strings or symbols
+        headers.each do |key, value| 
+          key = key.to_s.split("_").map{|p| p.capitalize}.join('-')
+          response.add_field(key, value)
+        end
       end
 
       response.instance_variable_set(:@read, true)
@@ -31,6 +37,12 @@ module FakeWeb
 
     private
 
+    def headers
+      # Here we are not interested in 'content' options.
+      # Using reject on the hash **should** work on and return a copy of the options hash.
+      options.reject{|key, value| [:file, :string].include?(key) }
+    end
+    
     def content
       [ :file, :string ].each do |map_option|
         next unless options.has_key?(map_option)
